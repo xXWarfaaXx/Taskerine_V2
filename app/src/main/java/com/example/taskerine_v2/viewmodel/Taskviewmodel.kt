@@ -1,5 +1,6 @@
 package com.example.taskerine_v2.viewmodel
 
+<<<<<<< HEAD
 import androidx.lifecycle.ViewModel
 import com.example.taskerine_v2.data.model.Task
 import com.example.taskerine_v2.data.repository.TaskerineRepository
@@ -8,6 +9,15 @@ import kotlinx.coroutines.flow.StateFlow
 
 // ... rest of the file stays exactly the same
 
+=======
+
+import androidx.lifecycle.ViewModel
+import com.taskerine.data.model.Task
+import com.taskerine.data.repository.TaskerineRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+
+>>>>>>> 719f10f52cdd6910ef3937185d4ae8c9d17f6743
 class TaskViewModel : ViewModel() {
 
     private val _openTasks = MutableStateFlow<List<Task>>(emptyList())

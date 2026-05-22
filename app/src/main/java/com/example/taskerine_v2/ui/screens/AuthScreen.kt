@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 package com.example.taskerine_v2.ui.screens
+=======
+package com.taskerine_v2.ui.screens
+>>>>>>> 719f10f52cdd6910ef3937185d4ae8c9d17f6743
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
@@ -11,8 +15,13 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+<<<<<<< HEAD
 import com.example.taskerine_v2.data.model.Role
 import com.example.taskerine_v2.viewmodel.AuthViewModel
+=======
+import com.taskerine.data.model.Role
+import com.taskerine.viewmodel.AuthViewModel
+>>>>>>> 719f10f52cdd6910ef3937185d4ae8c9d17f6743
 
 @Composable
 fun AuthScreen(
@@ -115,4 +124,9 @@ fun AuthScreen(
             Text(if (isLogin) "Don't have an account? Register" else "Already have an account? Login")
         }
     }
+<<<<<<< HEAD
 }
+=======
+}
+
+>>>>>>> 719f10f52cdd6910ef3937185d4ae8c9d17f6743

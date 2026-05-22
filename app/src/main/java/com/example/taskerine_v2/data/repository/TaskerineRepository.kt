@@ -1,9 +1,17 @@
 package com.example.taskerine_v2.data.repository
 
+<<<<<<< HEAD
 import com.example.taskerine_v2.data.model.Role
 import com.example.taskerine_v2.data.model.Task
 import com.example.taskerine_v2.data.model.TaskStatus
 import com.example.taskerine_v2.data.model.User
+=======
+
+import com.taskerine.data.model.Role
+import com.taskerine.data.model.Task
+import com.taskerine.data.model.TaskStatus
+import com.taskerine.data.model.User
+>>>>>>> 719f10f52cdd6910ef3937185d4ae8c9d17f6743
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 

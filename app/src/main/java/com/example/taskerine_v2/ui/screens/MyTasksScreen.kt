@@ -1,5 +1,9 @@
 package com.example.taskerine_v2.ui.screens
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 719f10f52cdd6910ef3937185d4ae8c9d17f6743
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -11,9 +15,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+<<<<<<< HEAD
 import com.example.taskerine_v2.data.model.User
 import com.example.taskerine_v2.viewmodel.TaskViewModel
 
+=======
+import com.taskerine.data.model.User
+import com.taskerine.viewmodel.TaskViewModel
+>>>>>>> 719f10f52cdd6910ef3937185d4ae8c9d17f6743
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

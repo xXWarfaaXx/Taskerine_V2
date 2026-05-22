@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 package com.example.taskerine_v2.navigation
+=======
+package com.taskerine.navigation
+>>>>>>> 719f10f52cdd6910ef3937185d4ae8c9d17f6743
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -8,9 +12,15 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+<<<<<<< HEAD
 import com.example.taskerine_v2.ui.screens.*
 import com.example.taskerine_v2.viewmodel.AuthViewModel
 import com.example.taskerine_v2.viewmodel.TaskViewModel
+=======
+import com.taskerine.ui.screens.*
+import com.taskerine.viewmodel.AuthViewModel
+import com.taskerine.viewmodel.TaskViewModel
+>>>>>>> 719f10f52cdd6910ef3937185d4ae8c9d17f6743
 
 sealed class Screen(val route: String) {
     object Auth : Screen("auth")
