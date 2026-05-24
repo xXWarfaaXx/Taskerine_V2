@@ -1,23 +1,14 @@
 package com.example.taskerine_v2.data.repository
 
-<<<<<<< HEAD
 import com.example.taskerine_v2.data.model.Role
 import com.example.taskerine_v2.data.model.Task
 import com.example.taskerine_v2.data.model.TaskStatus
 import com.example.taskerine_v2.data.model.User
-=======
-
-import com.taskerine.data.model.Role
-import com.taskerine.data.model.Task
-import com.taskerine.data.model.TaskStatus
-import com.taskerine.data.model.User
->>>>>>> 719f10f52cdd6910ef3937185d4ae8c9d17f6743
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 object TaskerineRepository {
 
-    // --- Auth ---
     private val _users = mutableListOf(
         User("u1", "alice", "alice@email.com", Role.REQUESTER),
         User("u2", "bob", "bob@email.com", Role.TASKER)
@@ -27,7 +18,6 @@ object TaskerineRepository {
     val currentUser get() = _currentUser
 
     fun login(email: String, password: String): User? {
-        // Fake auth — match by email only for now
         _currentUser = _users.find { it.email == email }
         return _currentUser
     }
@@ -48,7 +38,6 @@ object TaskerineRepository {
         _currentUser = null
     }
 
-    // --- Tasks ---
     private val _tasks = MutableStateFlow(
         mutableListOf(
             Task(

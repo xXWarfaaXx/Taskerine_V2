@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 package com.example.taskerine_v2.navigation
-=======
-package com.taskerine.navigation
->>>>>>> 719f10f52cdd6910ef3937185d4ae8c9d17f6743
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -12,18 +8,16 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-<<<<<<< HEAD
+import com.example.taskerine_v2.data.model.Role
 import com.example.taskerine_v2.ui.screens.*
 import com.example.taskerine_v2.viewmodel.AuthViewModel
 import com.example.taskerine_v2.viewmodel.TaskViewModel
-=======
-import com.taskerine.ui.screens.*
-import com.taskerine.viewmodel.AuthViewModel
-import com.taskerine.viewmodel.TaskViewModel
->>>>>>> 719f10f52cdd6910ef3937185d4ae8c9d17f6743
 
 sealed class Screen(val route: String) {
-    object Auth : Screen("auth")
+    object Welcome : Screen("welcome")
+    object Auth : Screen("auth/{role}") {
+        fun createRoute(role: Role) = "auth/${role.name}"
+    }
     object Home : Screen("home")
     object PostTask : Screen("post_task")
     object TaskDetail : Screen("task_detail/{taskId}") {
@@ -42,14 +36,29 @@ fun NavGraph(
 
     NavHost(
         navController = navController,
-        startDestination = if (currentUser != null) Screen.Home.route else Screen.Auth.route
+        startDestination = if (currentUser != null) Screen.Home.route else Screen.Welcome.route
     ) {
-        composable(Screen.Auth.route) {
+        composable(Screen.Welcome.route) {
+            WelcomeScreen(
+                onRoleSelected = { role ->
+                    navController.navigate(Screen.Auth.createRoute(role))
+                }
+            )
+        }
+
+        composable(
+            route = Screen.Auth.route,
+            arguments = listOf(navArgument("role") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val role = Role.valueOf(
+                backStackEntry.arguments?.getString("role") ?: Role.TASKER.name
+            )
             AuthScreen(
                 authViewModel = authViewModel,
+                preselectedRole = role,
                 onAuthSuccess = {
                     navController.navigate(Screen.Home.route) {
-                        popUpTo(Screen.Auth.route) { inclusive = true }
+                        popUpTo(Screen.Welcome.route) { inclusive = true }
                     }
                 }
             )
@@ -66,7 +75,7 @@ fun NavGraph(
                 onMyTasks = { navController.navigate(Screen.MyTasks.route) },
                 onLogout = {
                     authViewModel.logout()
-                    navController.navigate(Screen.Auth.route) {
+                    navController.navigate(Screen.Welcome.route) {
                         popUpTo(Screen.Home.route) { inclusive = true }
                     }
                 }

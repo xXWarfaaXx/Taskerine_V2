@@ -1,10 +1,15 @@
+package com.example.taskerine_v2
+
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.navigation.compose.rememberNavController
+import com.example.taskerine_v2.navigation.NavGraph
+import com.example.taskerine_v2.ui.theme.TaskerineTheme
+import com.example.taskerine_v2.viewmodel.AuthViewModel
+import com.example.taskerine_v2.viewmodel.TaskViewModel
 
 class MainActivity : ComponentActivity() {
 
@@ -14,7 +19,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            MaterialTheme {
+            TaskerineTheme {
                 Surface {
                     val navController = rememberNavController()
                     NavGraph(
