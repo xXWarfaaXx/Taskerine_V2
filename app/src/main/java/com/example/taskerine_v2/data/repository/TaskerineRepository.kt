@@ -63,7 +63,7 @@ object TaskerineRepository {
 
     val tasks: StateFlow<MutableList<Task>> = _tasks
 
-    fun getOpenTasks(): List<Task> = _tasks.value.filter { it.status == TaskStatus.OPEN }
+    fun getOpenTasks(): List<Task> = _tasks.value.toList() // returns ALL tasks so unavailable ones still show
 
     fun getTaskById(id: String): Task? = _tasks.value.find { it.id == id }
 

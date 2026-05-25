@@ -5,8 +5,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -25,7 +27,9 @@ fun MyTasksScreen(
     LaunchedEffect(currentUser?.id) {
         currentUser?.id?.let { taskViewModel.loadMyTasks(it) }
     }
-    val myTasks by taskViewModel.myTasks.collectAsState()
+
+    val filteredMyTasks by taskViewModel.filteredMyTasks.collectAsState()
+    val searchQuery by taskViewModel.searchQuery.collectAsState()
 
     Scaffold(
         topBar = {
@@ -45,15 +49,32 @@ fun MyTasksScreen(
                 .padding(horizontal = 16.dp)
         ) {
             Spacer(modifier = Modifier.height(8.dp))
-            if (myTasks.isEmpty()) {
-                Text(
-                    "No tasks yet.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 16.dp)
-                )
+
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { taskViewModel.onSearchQueryChange(it) },
+                placeholder = { Text("Search my tasks...") },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            if (filteredMyTasks.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        if (searchQuery.isNotEmpty()) "No tasks match \"$searchQuery\""
+                        else "No tasks yet.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             } else {
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    items(myTasks) { task ->
+                    items(filteredMyTasks) { task ->
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
@@ -66,7 +87,11 @@ fun MyTasksScreen(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text(task.status.name, fontSize = 13.sp, color = MaterialTheme.colorScheme.primary)
+                                    Text(
+                                        task.status.name.lowercase().replaceFirstChar { it.uppercase() },
+                                        fontSize = 13.sp,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
                                     Text("£%.2f".format(task.reward), fontWeight = FontWeight.Bold)
                                 }
                             }
