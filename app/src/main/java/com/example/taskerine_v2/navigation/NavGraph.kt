@@ -11,6 +11,7 @@ import androidx.navigation.navArgument
 import com.example.taskerine_v2.data.model.Role
 import com.example.taskerine_v2.ui.screens.*
 import com.example.taskerine_v2.viewmodel.AuthViewModel
+import com.example.taskerine_v2.viewmodel.CoinViewModel
 import com.example.taskerine_v2.viewmodel.TaskViewModel
 
 sealed class Screen(val route: String) {
@@ -24,13 +25,15 @@ sealed class Screen(val route: String) {
         fun createRoute(taskId: String) = "task_detail/$taskId"
     }
     object MyTasks : Screen("my_tasks")
+    object CoinStore : Screen("coin_store")
 }
 
 @Composable
 fun NavGraph(
     navController: NavHostController,
     authViewModel: AuthViewModel,
-    taskViewModel: TaskViewModel
+    taskViewModel: TaskViewModel,
+    coinViewModel: CoinViewModel
 ) {
     val currentUser by authViewModel.currentUser.collectAsState()
 
@@ -73,6 +76,7 @@ fun NavGraph(
                 },
                 onPostTask = { navController.navigate(Screen.PostTask.route) },
                 onMyTasks = { navController.navigate(Screen.MyTasks.route) },
+                onCoinStore = { navController.navigate(Screen.CoinStore.route) },
                 onLogout = {
                     authViewModel.logout()
                     navController.navigate(Screen.Welcome.route) {
@@ -110,6 +114,14 @@ fun NavGraph(
                 onTaskClick = { taskId ->
                     navController.navigate(Screen.TaskDetail.createRoute(taskId))
                 },
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.CoinStore.route) {
+            CoinStoreScreen(
+                currentUser = currentUser,
+                coinViewModel = coinViewModel,
                 onBack = { navController.popBackStack() }
             )
         }

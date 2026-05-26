@@ -4,6 +4,7 @@ data class User(
     val id: String,
     val username: String,
     val email: String,
-    val role: Role
+    val role: Role,
+    val coins: Int = 0
 )
 

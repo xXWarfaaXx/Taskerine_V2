@@ -9,12 +9,14 @@ import androidx.navigation.compose.rememberNavController
 import com.example.taskerine_v2.navigation.NavGraph
 import com.example.taskerine_v2.ui.theme.TaskerineTheme
 import com.example.taskerine_v2.viewmodel.AuthViewModel
+import com.example.taskerine_v2.viewmodel.CoinViewModel
 import com.example.taskerine_v2.viewmodel.TaskViewModel
 
 class MainActivity : ComponentActivity() {
 
     private val authViewModel: AuthViewModel by viewModels()
     private val taskViewModel: TaskViewModel by viewModels()
+    private val coinViewModel: CoinViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -25,7 +27,8 @@ class MainActivity : ComponentActivity() {
                     NavGraph(
                         navController = navController,
                         authViewModel = authViewModel,
-                        taskViewModel = taskViewModel
+                        taskViewModel = taskViewModel,
+                        coinViewModel = coinViewModel
                     )
                 }
             }

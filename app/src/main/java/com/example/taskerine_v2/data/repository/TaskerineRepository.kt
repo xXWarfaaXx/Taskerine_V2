@@ -10,15 +10,19 @@ import kotlinx.coroutines.flow.StateFlow
 object TaskerineRepository {
 
     private val _users = mutableListOf(
-        User("u1", "alice", "alice@email.com", Role.REQUESTER),
-        User("u2", "bob", "bob@email.com", Role.TASKER)
+        User("u1", "alice", "alice@email.com", Role.REQUESTER, coins = 200),
+        User("u2", "bob", "bob@email.com", Role.TASKER, coins = 100)
     )
+
+    private val _currentUserFlow = MutableStateFlow<User?>(null)
+    val currentUserFlow: StateFlow<User?> = _currentUserFlow
 
     private var _currentUser: User? = null
     val currentUser get() = _currentUser
 
     fun login(email: String, password: String): User? {
         _currentUser = _users.find { it.email == email }
+        _currentUserFlow.value = _currentUser
         return _currentUser
     }
 
@@ -27,15 +31,34 @@ object TaskerineRepository {
             id = "u${_users.size + 1}",
             username = username,
             email = email,
-            role = role
+            role = role,
+            coins = 0
         )
         _users.add(user)
         _currentUser = user
+        _currentUserFlow.value = user
         return user
     }
 
     fun logout() {
         _currentUser = null
+        _currentUserFlow.value = null
+    }
+
+    fun addCoins(userId: String, amount: Int) {
+        val index = _users.indexOfFirst { it.id == userId }
+        if (index != -1) {
+            val updated = _users[index].copy(coins = _users[index].coins + amount)
+            _users[index] = updated
+            if (_currentUser?.id == userId) {
+                _currentUser = updated
+                _currentUserFlow.value = updated
+            }
+        }
+    }
+
+    fun getCoins(userId: String): Int {
+        return _users.find { it.id == userId }?.coins ?: 0
     }
 
     private val _tasks = MutableStateFlow(
@@ -63,7 +86,7 @@ object TaskerineRepository {
 
     val tasks: StateFlow<MutableList<Task>> = _tasks
 
-    fun getOpenTasks(): List<Task> = _tasks.value.toList() // returns ALL tasks so unavailable ones still show
+    fun getOpenTasks(): List<Task> = _tasks.value.toList()
 
     fun getTaskById(id: String): Task? = _tasks.value.find { it.id == id }
 

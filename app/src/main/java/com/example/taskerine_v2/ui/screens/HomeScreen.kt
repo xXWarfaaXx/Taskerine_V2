@@ -4,11 +4,13 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,6 +22,7 @@ import com.example.taskerine_v2.data.model.Role
 import com.example.taskerine_v2.data.model.Task
 import com.example.taskerine_v2.data.model.TaskStatus
 import com.example.taskerine_v2.data.model.User
+import com.example.taskerine_v2.data.repository.TaskerineRepository
 import com.example.taskerine_v2.viewmodel.TaskViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -30,18 +33,23 @@ fun HomeScreen(
     onTaskClick: (String) -> Unit,
     onPostTask: () -> Unit,
     onMyTasks: () -> Unit,
+    onCoinStore: () -> Unit,
     onLogout: () -> Unit
 ) {
     LaunchedEffect(Unit) { taskViewModel.loadOpenTasks() }
 
     val filteredTasks by taskViewModel.filteredTasks.collectAsState()
     val searchQuery by taskViewModel.searchQuery.collectAsState()
+    val liveCoins = currentUser?.id?.let { TaskerineRepository.getCoins(it) } ?: 0
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Taskerine") },
                 actions = {
+                    IconButton(onClick = onCoinStore) {
+                        Icon(Icons.Default.ShoppingCart, contentDescription = "Coin Store")
+                    }
                     IconButton(onClick = onMyTasks) {
                         Icon(Icons.Default.List, contentDescription = "My Tasks")
                     }
@@ -59,18 +67,46 @@ fun HomeScreen(
             }
         }
     ) { padding ->
-        Column(modifier = Modifier.padding(padding).padding(horizontal = 16.dp)) {
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .padding(horizontal = 16.dp)
+        ) {
             Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                "Hello, ${currentUser?.username ?: "User"}",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.SemiBold
-            )
-            Text(
-                "Role: ${currentUser?.role?.name?.lowercase()?.replaceFirstChar { it.uppercase() }}",
-                fontSize = 13.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+
+            // Greeting + coin balance
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        "Hello, ${currentUser?.username ?: "User"}",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        "Role: ${currentUser?.role?.name?.lowercase()?.replaceFirstChar { it.uppercase() }}",
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    ),
+                    shape = RoundedCornerShape(20.dp)
+                ) {
+                    Text(
+                        "🪙 $liveCoins",
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
+
             Spacer(modifier = Modifier.height(12.dp))
 
             // Search bar
