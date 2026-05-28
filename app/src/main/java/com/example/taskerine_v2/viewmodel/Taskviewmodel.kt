@@ -52,6 +52,11 @@ class TaskViewModel : ViewModel() {
         loadMyTasks(taskerId)
     }
 
+    fun completeTask(taskId: String) {
+        TaskerineRepository.completeTask(taskId)
+        loadOpenTasks()
+    }
+
     fun onSearchQueryChange(query: String) {
         _searchQuery.value = query
         applySearch()

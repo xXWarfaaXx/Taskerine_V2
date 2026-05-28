@@ -1,5 +1,6 @@
 package com.example.taskerine_v2.data.repository
 
+import com.example.taskerine_v2.data.model.Review
 import com.example.taskerine_v2.data.model.Role
 import com.example.taskerine_v2.data.model.Task
 import com.example.taskerine_v2.data.model.TaskStatus
@@ -108,9 +109,42 @@ object TaskerineRepository {
         _tasks.value = updated
     }
 
+    fun completeTask(taskId: String) {
+        val updated = _tasks.value.toMutableList()
+        val index = updated.indexOfFirst { it.id == taskId }
+        if (index != -1) {
+            updated[index] = updated[index].copy(status = TaskStatus.COMPLETED)
+        }
+        _tasks.value = updated
+    }
+
+
+
     fun getTasksForUser(userId: String): List<Task> {
         return _tasks.value.filter {
             it.requesterId == userId || it.acceptedById == userId
         }
     }
+
+    // --- Reviews ---
+    private val _reviews = mutableListOf<Review>()
+
+    fun submitReview(review: Review) {
+        _reviews.add(review)
+    }
+
+    fun getReviewsForUser(userId: String): List<Review> {
+        return _reviews.filter { it.targetUserId == userId }
+    }
+
+    fun getReviewForTask(taskId: String, reviewerId: String): Review? {
+        return _reviews.find { it.taskId == taskId && it.reviewerId == reviewerId }
+    }
+
+    fun getAverageRating(userId: String): Double {
+        val reviews = getReviewsForUser(userId)
+        return if (reviews.isEmpty()) 0.0 else reviews.map { it.rating }.average()
+    }
+
+    fun getUserById(userId: String): User? = _users.find { it.id == userId }
 }

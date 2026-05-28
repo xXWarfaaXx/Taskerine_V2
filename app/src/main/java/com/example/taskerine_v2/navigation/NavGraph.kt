@@ -12,6 +12,7 @@ import com.example.taskerine_v2.data.model.Role
 import com.example.taskerine_v2.ui.screens.*
 import com.example.taskerine_v2.viewmodel.AuthViewModel
 import com.example.taskerine_v2.viewmodel.CoinViewModel
+import com.example.taskerine_v2.viewmodel.ReviewViewModel
 import com.example.taskerine_v2.viewmodel.TaskViewModel
 
 sealed class Screen(val route: String) {
@@ -26,6 +27,9 @@ sealed class Screen(val route: String) {
     }
     object MyTasks : Screen("my_tasks")
     object CoinStore : Screen("coin_store")
+    object Reviews : Screen("reviews/{taskId}") {
+        fun createRoute(taskId: String) = "reviews/$taskId"
+    }
 }
 
 @Composable
@@ -33,7 +37,8 @@ fun NavGraph(
     navController: NavHostController,
     authViewModel: AuthViewModel,
     taskViewModel: TaskViewModel,
-    coinViewModel: CoinViewModel
+    coinViewModel: CoinViewModel,
+    reviewViewModel: ReviewViewModel
 ) {
     val currentUser by authViewModel.currentUser.collectAsState()
 
@@ -103,7 +108,8 @@ fun NavGraph(
                 taskId = taskId,
                 currentUser = currentUser,
                 taskViewModel = taskViewModel,
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onReviews = { id -> navController.navigate(Screen.Reviews.createRoute(id)) }
             )
         }
 
@@ -122,6 +128,19 @@ fun NavGraph(
             CoinStoreScreen(
                 currentUser = currentUser,
                 coinViewModel = coinViewModel,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = Screen.Reviews.route,
+            arguments = listOf(navArgument("taskId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val taskId = backStackEntry.arguments?.getString("taskId") ?: return@composable
+            ReviewScreen(
+                taskId = taskId,
+                currentUser = currentUser,
+                reviewViewModel = reviewViewModel,
                 onBack = { navController.popBackStack() }
             )
         }

@@ -20,7 +20,8 @@ fun TaskDetailScreen(
     taskId: String,
     currentUser: User?,
     taskViewModel: TaskViewModel,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onReviews: (String) -> Unit
 ) {
     LaunchedEffect(taskId) { taskViewModel.selectTask(taskId) }
     val task by taskViewModel.selectedTask.collectAsState()
@@ -46,13 +47,20 @@ fun TaskDetailScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(t.title, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-                Text("Posted by ${t.requesterName}", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    "Posted by ${t.requesterName}",
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
 
                 HorizontalDivider()
 
                 DetailRow(label = "Location", value = t.location)
                 DetailRow(label = "Reward", value = "£%.2f".format(t.reward))
-                DetailRow(label = "Status", value = t.status.name)
+                DetailRow(
+                    label = "Status",
+                    value = t.status.name.lowercase().replaceFirstChar { it.uppercase() }
+                )
 
                 HorizontalDivider()
 
@@ -61,6 +69,7 @@ fun TaskDetailScreen(
 
                 Spacer(modifier = Modifier.weight(1f))
 
+                // Tasker can accept open tasks
                 val canAccept = currentUser?.role == Role.TASKER
                         && t.status == TaskStatus.OPEN
                         && t.requesterId != currentUser?.id
@@ -78,13 +87,39 @@ fun TaskDetailScreen(
                     ) {
                         Text("Accept Task")
                     }
-                } else if (t.acceptedById == currentUser?.id) {
+                } else if (t.acceptedById == currentUser?.id && t.status == TaskStatus.ACCEPTED) {
                     OutlinedButton(
                         onClick = {},
                         enabled = false,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("You accepted this task")
+                    }
+                }
+
+                // Requester can mark accepted task as complete
+                val canComplete = currentUser?.id == t.requesterId
+                        && t.status == TaskStatus.ACCEPTED
+
+                if (canComplete) {
+                    OutlinedButton(
+                        onClick = {
+                            taskViewModel.completeTask(t.id)
+                            onBack()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Mark as Completed")
+                    }
+                }
+
+                // Reviews button visible to both parties once completed
+                if (t.status == TaskStatus.COMPLETED) {
+                    Button(
+                        onClick = { onReviews(t.id) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("⭐ Leave / View Reviews")
                     }
                 }
             }
