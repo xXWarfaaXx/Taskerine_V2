@@ -25,6 +25,7 @@ fun AuthScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var username by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(false) }
 
     val error by authViewModel.error.collectAsState()
 
@@ -103,21 +104,39 @@ fun AuthScreen(
 
         Button(
             onClick = {
-                val success = if (isLogin) {
-                    authViewModel.login(email, password)
+                isLoading = true
+                if (isLogin) {
+                    authViewModel.login(email, password) { success ->
+                        isLoading = false
+                        if (success) onAuthSuccess()
+                    }
                 } else {
-                    authViewModel.register(username, email, selectedRole)
+                    authViewModel.register(username, email, selectedRole) { success ->
+                        isLoading = false
+                        if (success) onAuthSuccess()
+                    }
                 }
-                if (success) onAuthSuccess()
             },
+            enabled = !isLoading,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(if (isLogin) "Login" else "Register")
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(18.dp),
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    strokeWidth = 2.dp
+                )
+            } else {
+                Text(if (isLogin) "Login" else "Register")
+            }
         }
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        TextButton(onClick = { isLogin = !isLogin }) {
+        TextButton(onClick = {
+            isLogin = !isLogin
+            isLoading = false
+        }) {
             Text(if (isLogin) "Don't have an account? Register" else "Already have an account? Login")
         }
     }

@@ -1,45 +1,46 @@
 package com.example.taskerine_v2.viewmodel
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.taskerine_v2.data.model.Role
 import com.example.taskerine_v2.data.model.User
 import com.example.taskerine_v2.data.repository.TaskerineRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 
-class AuthViewModel : ViewModel() {
+class AuthViewModel(private val repository: TaskerineRepository) : ViewModel() {
 
-    private val _currentUser = MutableStateFlow<User?>(null)
-    val currentUser: StateFlow<User?> = _currentUser
+    val currentUser: StateFlow<User?> = repository.currentUserFlow
 
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
 
-    fun login(email: String, password: String): Boolean {
-        val user = TaskerineRepository.login(email, password)
-        return if (user != null) {
-            _currentUser.value = user
-            _error.value = null
-            true
-        } else {
-            _error.value = "Invalid email or password"
-            false
+    fun login(email: String, password: String, onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            val user = repository.login(email, password)
+            if (user != null) {
+                _error.value = null
+                onResult(true)
+            } else {
+                _error.value = "Invalid email or password"
+                onResult(false)
+            }
         }
     }
 
-    fun register(username: String, email: String, role: Role): Boolean {
+    fun register(username: String, email: String, role: Role, onResult: (Boolean) -> Unit) {
         if (username.isBlank() || email.isBlank()) {
             _error.value = "All fields are required"
-            return false
+            onResult(false)
+            return
         }
-        val user = TaskerineRepository.register(username, email, role)
-        _currentUser.value = user
-        _error.value = null
-        return true
+        viewModelScope.launch {
+            repository.register(username, email, role)
+            _error.value = null
+            onResult(true)
+        }
     }
 
-    fun logout() {
-        TaskerineRepository.logout()
-        _currentUser.value = null
-    }
+    fun logout() = repository.logout()
 }

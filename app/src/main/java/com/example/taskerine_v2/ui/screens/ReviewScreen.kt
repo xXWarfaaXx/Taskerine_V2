@@ -14,10 +14,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.taskerine_v2.data.model.Task
+import com.example.taskerine_v2.data.model.Review
 import com.example.taskerine_v2.data.model.TaskStatus
 import com.example.taskerine_v2.data.model.User
-import com.example.taskerine_v2.data.repository.TaskerineRepository
 import com.example.taskerine_v2.viewmodel.ReviewViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -31,34 +30,23 @@ fun ReviewScreen(
     reviewViewModel: ReviewViewModel,
     onBack: () -> Unit
 ) {
-    val task = remember { TaskerineRepository.getTaskById(taskId) }
     val submitSuccess by reviewViewModel.submitSuccess.collectAsState()
     val reviews by reviewViewModel.reviews.collectAsState()
     val averageRating by reviewViewModel.averageRating.collectAsState()
+    val task by reviewViewModel.currentTask.collectAsState()
+    val targetUser by reviewViewModel.targetUser.collectAsState()
+    val alreadyReviewed by reviewViewModel.alreadyReviewed.collectAsState()
 
     var rating by remember { mutableStateOf(0) }
     var comment by remember { mutableStateOf("") }
 
-    // Determine who to review
-    val targetUserId = when {
-        currentUser?.id == task?.requesterId -> task?.acceptedById  // requester reviews tasker
-        currentUser?.id == task?.acceptedById -> task?.requesterId  // tasker reviews requester
-        else -> null
+    LaunchedEffect(taskId, currentUser?.id) {
+        reviewViewModel.loadTaskData(taskId, currentUser?.id)
     }
-    val targetUser = targetUserId?.let { TaskerineRepository.getUserById(it) }
-    val alreadyReviewed = task?.id?.let {
-        currentUser?.id?.let { rid ->
-            TaskerineRepository.getReviewForTask(it, rid)
-        }
-    } != null
 
     val canReview = task?.status == TaskStatus.COMPLETED
-            && targetUserId != null
+            && targetUser != null
             && !alreadyReviewed
-
-    LaunchedEffect(targetUserId) {
-        targetUserId?.let { reviewViewModel.loadReviewsForUser(it) }
-    }
 
     LaunchedEffect(submitSuccess) {
         if (submitSuccess) {
@@ -85,7 +73,7 @@ fun ReviewScreen(
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Task info
+            // Task info card
             item {
                 Spacer(modifier = Modifier.height(4.dp))
                 Card(
@@ -118,7 +106,7 @@ fun ReviewScreen(
                 }
             }
 
-            // Average rating for target user
+            // Average rating
             if (reviews.isNotEmpty()) {
                 item {
                     Card(
@@ -161,7 +149,6 @@ fun ReviewScreen(
                 }
             }
 
-            // Leave a review form
             item {
                 Text("Leave a Review", fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }
@@ -214,8 +201,6 @@ fun ReviewScreen(
                             Column(modifier = Modifier.padding(16.dp)) {
                                 Text("Rating", fontWeight = FontWeight.Medium)
                                 Spacer(modifier = Modifier.height(8.dp))
-
-                                // Star rating row
                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     (1..5).forEach { star ->
                                         IconButton(
@@ -242,7 +227,6 @@ fun ReviewScreen(
                                         )
                                     }
                                 }
-
                                 Spacer(modifier = Modifier.height(12.dp))
                                 OutlinedTextField(
                                     value = comment,
@@ -252,17 +236,16 @@ fun ReviewScreen(
                                     minLines = 3,
                                     modifier = Modifier.fillMaxWidth()
                                 )
-
                                 Spacer(modifier = Modifier.height(12.dp))
                                 Button(
                                     onClick = {
                                         if (rating > 0 && comment.isNotBlank()) {
                                             reviewViewModel.submitReview(
-                                                taskId = task.id,
-                                                taskTitle = task.title,
+                                                taskId = taskId,
+                                                taskTitle = task?.title ?: "",
                                                 reviewerId = currentUser!!.id,
                                                 reviewerName = currentUser.username,
-                                                targetUserId = targetUserId!!,
+                                                targetUserId = targetUser!!.id,
                                                 rating = rating,
                                                 comment = comment
                                             )
@@ -279,7 +262,6 @@ fun ReviewScreen(
                 }
             }
 
-            // Existing reviews list
             if (reviews.isNotEmpty()) {
                 item {
                     Text(
@@ -298,7 +280,7 @@ fun ReviewScreen(
 }
 
 @Composable
-fun ReviewCard(review: com.example.taskerine_v2.data.model.Review) {
+fun ReviewCard(review: Review) {
     val date = remember(review.timestamp) {
         SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(Date(review.timestamp))
     }
@@ -350,4 +332,3 @@ fun ReviewCard(review: com.example.taskerine_v2.data.model.Review) {
         }
     }
 }
-

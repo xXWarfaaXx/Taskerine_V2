@@ -22,7 +22,7 @@ import com.example.taskerine_v2.data.model.Role
 import com.example.taskerine_v2.data.model.Task
 import com.example.taskerine_v2.data.model.TaskStatus
 import com.example.taskerine_v2.data.model.User
-import com.example.taskerine_v2.data.repository.TaskerineRepository
+import com.example.taskerine_v2.viewmodel.CoinViewModel
 import com.example.taskerine_v2.viewmodel.TaskViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -30,17 +30,20 @@ import com.example.taskerine_v2.viewmodel.TaskViewModel
 fun HomeScreen(
     currentUser: User?,
     taskViewModel: TaskViewModel,
+    coinViewModel: CoinViewModel,
     onTaskClick: (String) -> Unit,
     onPostTask: () -> Unit,
     onMyTasks: () -> Unit,
     onCoinStore: () -> Unit,
     onLogout: () -> Unit
 ) {
-    LaunchedEffect(Unit) { taskViewModel.loadOpenTasks() }
+    LaunchedEffect(currentUser?.id) {
+        currentUser?.id?.let { coinViewModel.loadCoins(it) }
+    }
 
     val filteredTasks by taskViewModel.filteredTasks.collectAsState()
     val searchQuery by taskViewModel.searchQuery.collectAsState()
-    val liveCoins = currentUser?.id?.let { TaskerineRepository.getCoins(it) } ?: 0
+    val liveCoins by coinViewModel.liveCoins.collectAsState()
 
     Scaffold(
         topBar = {
@@ -74,7 +77,6 @@ fun HomeScreen(
         ) {
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Greeting + coin balance
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -109,7 +111,6 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Search bar
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { taskViewModel.onSearchQueryChange(it) },

@@ -16,7 +16,6 @@ import androidx.compose.ui.unit.sp
 import com.example.taskerine_v2.data.model.CoinPackage
 import com.example.taskerine_v2.data.model.User
 import com.example.taskerine_v2.data.model.coinPackages
-import com.example.taskerine_v2.data.repository.TaskerineRepository
 import com.example.taskerine_v2.viewmodel.CoinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -27,12 +26,17 @@ fun CoinStoreScreen(
     onBack: () -> Unit
 ) {
     val purchaseSuccess by coinViewModel.purchaseSuccess.collectAsState()
-    val liveCoins = currentUser?.id?.let { TaskerineRepository.getCoins(it) } ?: 0
+    val liveCoins by coinViewModel.liveCoins.collectAsState()
 
-    // quantity state per package
-    val quantities = remember { mutableStateMapOf<String, Int>().apply {
-        coinPackages.forEach { put(it.id, 1) }
-    }}
+    val quantities = remember {
+        mutableStateMapOf<String, Int>().apply {
+            coinPackages.forEach { put(it.id, 1) }
+        }
+    }
+
+    LaunchedEffect(currentUser?.id) {
+        currentUser?.id?.let { coinViewModel.loadCoins(it) }
+    }
 
     LaunchedEffect(purchaseSuccess) {
         if (purchaseSuccess != null) {
@@ -88,7 +92,10 @@ fun CoinStoreScreen(
                             fontWeight = FontWeight.Bold
                         )
                     }
-                    Text("👤 ${currentUser?.username}", color = MaterialTheme.colorScheme.onPrimary)
+                    Text(
+                        "👤 ${currentUser?.username}",
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
                 }
             }
 
@@ -188,7 +195,6 @@ fun CoinPackageCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Quantity selector
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     FilledTonalIconButton(
                         onClick = onDecrease,
@@ -211,7 +217,6 @@ fun CoinPackageCard(
                     }
                 }
 
-                // Total + buy button
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
                         "🪙 $totalCoins coins",

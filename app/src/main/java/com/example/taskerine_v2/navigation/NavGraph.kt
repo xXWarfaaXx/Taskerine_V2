@@ -1,5 +1,6 @@
 package com.example.taskerine_v2.navigation
 
+
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -76,6 +77,7 @@ fun NavGraph(
             HomeScreen(
                 currentUser = currentUser,
                 taskViewModel = taskViewModel,
+                coinViewModel = coinViewModel,
                 onTaskClick = { taskId ->
                     navController.navigate(Screen.TaskDetail.createRoute(taskId))
                 },
