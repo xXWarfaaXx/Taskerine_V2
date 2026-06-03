@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -35,6 +36,7 @@ fun HomeScreen(
     onPostTask: () -> Unit,
     onMyTasks: () -> Unit,
     onCoinStore: () -> Unit,
+    onSettings: () -> Unit,
     onLogout: () -> Unit
 ) {
     LaunchedEffect(currentUser?.id) {
@@ -50,6 +52,9 @@ fun HomeScreen(
             TopAppBar(
                 title = { Text("Taskerine") },
                 actions = {
+                    IconButton(onClick = onSettings) {
+                        Icon(Icons.Default.Settings, contentDescription = "Settings")
+                    }
                     IconButton(onClick = onCoinStore) {
                         Icon(Icons.Default.ShoppingCart, contentDescription = "Coin Store")
                     }

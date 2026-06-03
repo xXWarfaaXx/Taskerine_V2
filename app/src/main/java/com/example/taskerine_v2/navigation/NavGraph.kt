@@ -31,6 +31,7 @@ sealed class Screen(val route: String) {
     object Reviews : Screen("reviews/{taskId}") {
         fun createRoute(taskId: String) = "reviews/$taskId"
     }
+    object Settings : Screen("settings")
 }
 
 @Composable
@@ -78,6 +79,7 @@ fun NavGraph(
                 currentUser = currentUser,
                 taskViewModel = taskViewModel,
                 coinViewModel = coinViewModel,
+                onSettings = { navController.navigate(Screen.Settings.route) },
                 onTaskClick = { taskId ->
                     navController.navigate(Screen.TaskDetail.createRoute(taskId))
                 },
@@ -144,6 +146,25 @@ fun NavGraph(
                 currentUser = currentUser,
                 reviewViewModel = reviewViewModel,
                 onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.Settings.route) {
+            SettingsScreen(
+                currentUser = currentUser,
+                onBack = { navController.popBackStack() },
+                onLogout = {
+                    authViewModel.logout()
+                    navController.navigate(Screen.Welcome.route) {
+                        popUpTo(Screen.Home.route) { inclusive = true }
+                    }
+                },
+                onDeleteAccount = {
+                    authViewModel.logout()
+                    navController.navigate(Screen.Welcome.route) {
+                        popUpTo(Screen.Home.route) { inclusive = true }
+                    }
+                }
             )
         }
     }
