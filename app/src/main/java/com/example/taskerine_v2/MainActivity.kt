@@ -12,6 +12,8 @@ import com.example.taskerine_v2.viewmodel.AuthViewModel
 import com.example.taskerine_v2.viewmodel.AuthViewModelFactory
 import com.example.taskerine_v2.viewmodel.CoinViewModel
 import com.example.taskerine_v2.viewmodel.CoinViewModelFactory
+import com.example.taskerine_v2.viewmodel.MessageViewModel
+import com.example.taskerine_v2.viewmodel.MessageViewModelFactory
 import com.example.taskerine_v2.viewmodel.ReviewViewModel
 import com.example.taskerine_v2.viewmodel.ReviewViewModelFactory
 import com.example.taskerine_v2.viewmodel.TaskViewModel
@@ -33,6 +35,9 @@ class MainActivity : ComponentActivity() {
     private val reviewViewModel: ReviewViewModel by viewModels {
         ReviewViewModelFactory(repository)
     }
+    private val messageViewModel: MessageViewModel by viewModels {
+        MessageViewModelFactory(repository)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,7 +50,8 @@ class MainActivity : ComponentActivity() {
                         authViewModel = authViewModel,
                         taskViewModel = taskViewModel,
                         coinViewModel = coinViewModel,
-                        reviewViewModel = reviewViewModel
+                        reviewViewModel = reviewViewModel,
+                        messageViewModel = messageViewModel
                     )
                 }
             }

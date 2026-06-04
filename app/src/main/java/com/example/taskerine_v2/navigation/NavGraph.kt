@@ -1,6 +1,5 @@
 package com.example.taskerine_v2.navigation
 
-
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -13,6 +12,7 @@ import com.example.taskerine_v2.data.model.Role
 import com.example.taskerine_v2.ui.screens.*
 import com.example.taskerine_v2.viewmodel.AuthViewModel
 import com.example.taskerine_v2.viewmodel.CoinViewModel
+import com.example.taskerine_v2.viewmodel.MessageViewModel
 import com.example.taskerine_v2.viewmodel.ReviewViewModel
 import com.example.taskerine_v2.viewmodel.TaskViewModel
 
@@ -40,7 +40,8 @@ fun NavGraph(
     authViewModel: AuthViewModel,
     taskViewModel: TaskViewModel,
     coinViewModel: CoinViewModel,
-    reviewViewModel: ReviewViewModel
+    reviewViewModel: ReviewViewModel,
+    messageViewModel: MessageViewModel
 ) {
     val currentUser by authViewModel.currentUser.collectAsState()
 
@@ -79,13 +80,13 @@ fun NavGraph(
                 currentUser = currentUser,
                 taskViewModel = taskViewModel,
                 coinViewModel = coinViewModel,
-                onSettings = { navController.navigate(Screen.Settings.route) },
                 onTaskClick = { taskId ->
                     navController.navigate(Screen.TaskDetail.createRoute(taskId))
                 },
                 onPostTask = { navController.navigate(Screen.PostTask.route) },
                 onMyTasks = { navController.navigate(Screen.MyTasks.route) },
                 onCoinStore = { navController.navigate(Screen.CoinStore.route) },
+                onSettings = { navController.navigate(Screen.Settings.route) },
                 onLogout = {
                     authViewModel.logout()
                     navController.navigate(Screen.Welcome.route) {
@@ -112,6 +113,7 @@ fun NavGraph(
                 taskId = taskId,
                 currentUser = currentUser,
                 taskViewModel = taskViewModel,
+                messageViewModel = messageViewModel,
                 onBack = { navController.popBackStack() },
                 onReviews = { id -> navController.navigate(Screen.Reviews.createRoute(id)) }
             )

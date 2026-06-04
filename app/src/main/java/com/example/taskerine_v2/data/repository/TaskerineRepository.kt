@@ -9,6 +9,7 @@ import com.example.taskerine_v2.data.model.Task
 import com.example.taskerine_v2.data.model.TaskStatus
 import com.example.taskerine_v2.data.model.User
 import com.example.taskerine_v2.data.local.entities.UserEntity
+import com.example.taskerine_v2.data.model.Message
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -42,6 +43,16 @@ class TaskerineRepository(private val db: TaskerineDatabase) {
             task.copy(status = TaskStatus.ACCEPTED, acceptedById = taskerId)
         )
     }
+
+    // Add to constructor/init:
+    private val messageDao = db.messageDao()
+
+    // Add these functions:
+    fun getMessagesForTask(taskId: String): Flow<List<Message>> =
+        messageDao.getMessagesForTask(taskId).map { list -> list.map { it.toModel() } }
+
+    suspend fun sendMessage(message: Message) =
+        messageDao.insertMessage(message.toEntity())
 
     suspend fun completeTask(taskId: String) {
         val task = taskDao.getTaskById(taskId) ?: return
