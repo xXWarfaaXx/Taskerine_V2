@@ -1,5 +1,6 @@
 package com.example.taskerine_v2.ui.screens
 
+import com.example.taskerine_v2.ui.components.TaskLocationMap
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -93,6 +94,9 @@ fun TaskDetailScreen(
                         HorizontalDivider()
                         Spacer(modifier = Modifier.height(8.dp))
                         DetailRow(label = "Location", value = t.location)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        TaskLocationMap(location = t.location)
+                        Spacer(modifier = Modifier.height(8.dp))
                         DetailRow(label = "Reward", value = "£%.2f".format(t.reward))
                         DetailRow(
                             label = "Status",
