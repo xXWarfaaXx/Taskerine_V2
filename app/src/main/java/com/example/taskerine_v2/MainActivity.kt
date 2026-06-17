@@ -14,6 +14,8 @@ import com.example.taskerine_v2.viewmodel.CoinViewModel
 import com.example.taskerine_v2.viewmodel.CoinViewModelFactory
 import com.example.taskerine_v2.viewmodel.MessageViewModel
 import com.example.taskerine_v2.viewmodel.MessageViewModelFactory
+import com.example.taskerine_v2.viewmodel.ReportViewModel
+import com.example.taskerine_v2.viewmodel.ReportViewModelFactory
 import com.example.taskerine_v2.viewmodel.ReviewViewModel
 import com.example.taskerine_v2.viewmodel.ReviewViewModelFactory
 import com.example.taskerine_v2.viewmodel.TaskViewModel
@@ -38,6 +40,9 @@ class MainActivity : ComponentActivity() {
     private val messageViewModel: MessageViewModel by viewModels {
         MessageViewModelFactory(repository)
     }
+    private val reportViewModel: ReportViewModel by viewModels {   // ← NEW
+        ReportViewModelFactory(repository)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,12 +51,13 @@ class MainActivity : ComponentActivity() {
                 Surface {
                     val navController = rememberNavController()
                     NavGraph(
-                        navController = navController,
-                        authViewModel = authViewModel,
-                        taskViewModel = taskViewModel,
-                        coinViewModel = coinViewModel,
-                        reviewViewModel = reviewViewModel,
-                        messageViewModel = messageViewModel
+                        navController    = navController,
+                        authViewModel    = authViewModel,
+                        taskViewModel    = taskViewModel,
+                        coinViewModel    = coinViewModel,
+                        reviewViewModel  = reviewViewModel,
+                        messageViewModel = messageViewModel,
+                        reportViewModel  = reportViewModel   // ← NEW
                     )
                 }
             }

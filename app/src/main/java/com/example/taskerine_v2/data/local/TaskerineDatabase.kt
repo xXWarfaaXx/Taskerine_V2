@@ -8,10 +8,12 @@ import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.taskerine_v2.data.local.dao.MessageDao
+import com.example.taskerine_v2.data.local.dao.ReportDao
 import com.example.taskerine_v2.data.local.dao.ReviewDao
 import com.example.taskerine_v2.data.local.dao.TaskDao
 import com.example.taskerine_v2.data.local.dao.UserDao
 import com.example.taskerine_v2.data.local.entities.MessageEntity
+import com.example.taskerine_v2.data.local.entities.ReportEntity
 import com.example.taskerine_v2.data.local.entities.ReviewEntity
 import com.example.taskerine_v2.data.local.entities.TaskEntity
 import com.example.taskerine_v2.data.local.entities.UserEntity
@@ -21,8 +23,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 @Database(
-    entities = [TaskEntity::class, UserEntity::class, ReviewEntity::class, MessageEntity::class],
-    version = 2,
+    entities = [
+        TaskEntity::class,
+        UserEntity::class,
+        ReviewEntity::class,
+        MessageEntity::class,
+        ReportEntity::class
+    ],
+    version = 3,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -32,6 +40,7 @@ abstract class TaskerineDatabase : RoomDatabase() {
     abstract fun userDao(): UserDao
     abstract fun reviewDao(): ReviewDao
     abstract fun messageDao(): MessageDao
+    abstract fun reportDao(): ReportDao
 
     companion object {
         @Volatile private var INSTANCE: TaskerineDatabase? = null
@@ -51,6 +60,21 @@ abstract class TaskerineDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    """CREATE TABLE IF NOT EXISTS reports (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        reportedUsername TEXT NOT NULL,
+                        description TEXT NOT NULL,
+                        attachmentUris TEXT NOT NULL DEFAULT '',
+                        reporterId TEXT NOT NULL,
+                        timestamp INTEGER NOT NULL
+                    )"""
+                )
+            }
+        }
+
         fun getInstance(context: Context): TaskerineDatabase {
             return INSTANCE ?: synchronized(this) {
                 Room.databaseBuilder(
@@ -58,7 +82,7 @@ abstract class TaskerineDatabase : RoomDatabase() {
                     TaskerineDatabase::class.java,
                     "taskerine_db"
                 )
-                    .addMigrations(MIGRATION_1_2)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             super.onCreate(db)

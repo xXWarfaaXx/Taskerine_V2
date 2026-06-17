@@ -3,6 +3,9 @@ package com.example.taskerine_v2.data.repository
 import com.example.taskerine_v2.data.local.TaskerineDatabase
 import com.example.taskerine_v2.data.local.toEntity
 import com.example.taskerine_v2.data.local.toModel
+import com.example.taskerine_v2.data.local.entities.toEntity
+import com.example.taskerine_v2.data.local.entities.toModel
+import com.example.taskerine_v2.data.model.Report
 import com.example.taskerine_v2.data.model.Review
 import com.example.taskerine_v2.data.model.Role
 import com.example.taskerine_v2.data.model.Task
@@ -21,6 +24,7 @@ class TaskerineRepository(private val db: TaskerineDatabase) {
     private val taskDao = db.taskDao()
     private val userDao = db.userDao()
     private val reviewDao = db.reviewDao()
+    private val reportDao = db.reportDao()
 
     private val _currentUserFlow = MutableStateFlow<User?>(null)
     val currentUserFlow: StateFlow<User?> = _currentUserFlow
@@ -115,4 +119,14 @@ class TaskerineRepository(private val db: TaskerineDatabase) {
             }
             .first()
     }
+
+    // --- Reports ---
+    suspend fun submitReport(report: Report) =
+        reportDao.insertReport(report.toEntity())
+
+    fun getReportsForUser(userId: String): Flow<List<Report>> =
+        reportDao.getReportsForUser(userId).map { list -> list.map { it.toModel() } }
+
+    fun getAllReports(): Flow<List<Report>> =
+        reportDao.getAllReports().map { list -> list.map { it.toModel() } }
 }

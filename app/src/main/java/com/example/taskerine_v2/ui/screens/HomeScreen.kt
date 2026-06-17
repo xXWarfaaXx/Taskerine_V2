@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
@@ -37,6 +38,7 @@ fun HomeScreen(
     onMyTasks: () -> Unit,
     onCoinStore: () -> Unit,
     onSettings: () -> Unit,
+    onReport: () -> Unit,          // ← NEW
     onLogout: () -> Unit
 ) {
     LaunchedEffect(currentUser?.id) {
@@ -52,6 +54,9 @@ fun HomeScreen(
             TopAppBar(
                 title = { Text("Taskerine") },
                 actions = {
+                    IconButton(onClick = onReport) {
+                        Icon(Icons.Default.Flag, contentDescription = "Report a User")
+                    }
                     IconButton(onClick = onSettings) {
                         Icon(Icons.Default.Settings, contentDescription = "Settings")
                     }
