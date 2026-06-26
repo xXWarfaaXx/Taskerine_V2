@@ -102,6 +102,40 @@ class TaskerineRepository(private val db: TaskerineDatabase) {
     suspend fun getUserById(userId: String): User? =
         userDao.getUserById(userId)?.toModel()
 
+    // --- Profile updates ---
+    // Returns Result.success(Unit) on success, or Result.failure with a message on validation failure.
+    suspend fun updateUserProfile(
+        userId: String,
+        newUsername: String,
+        newEmail: String
+    ): Result<Unit> {
+        if (newUsername.isBlank()) {
+            return Result.failure(IllegalArgumentException("Username cannot be empty"))
+        }
+        if (newEmail.isBlank() || !newEmail.contains("@")) {
+            return Result.failure(IllegalArgumentException("Enter a valid email"))
+        }
+
+        val user = userDao.getUserById(userId)
+            ?: return Result.failure(IllegalStateException("User not found"))
+
+        // Prevent duplicate emails across accounts (skip check if email is unchanged)
+        if (newEmail != user.email) {
+            val existing = userDao.getUserByEmail(newEmail)
+            if (existing != null && existing.id != userId) {
+                return Result.failure(IllegalArgumentException("Email already in use"))
+            }
+        }
+
+        val updated = user.copy(username = newUsername.trim(), email = newEmail.trim())
+        userDao.updateUser(updated)
+
+        if (_currentUserFlow.value?.id == userId) {
+            _currentUserFlow.value = updated.toModel()
+        }
+        return Result.success(Unit)
+    }
+
     // --- Reviews ---
     fun getReviewsForUser(userId: String): Flow<List<Review>> =
         reviewDao.getReviewsForUser(userId).map { list -> list.map { it.toModel() } }

@@ -16,6 +16,13 @@ class AuthViewModel(private val repository: TaskerineRepository) : ViewModel() {
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
 
+    // --- Profile update state ---
+    private val _profileUpdateError = MutableStateFlow<String?>(null)
+    val profileUpdateError: StateFlow<String?> = _profileUpdateError
+
+    private val _profileUpdateSuccess = MutableStateFlow(false)
+    val profileUpdateSuccess: StateFlow<Boolean> = _profileUpdateSuccess
+
     fun login(email: String, password: String, onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
             val user = repository.login(email, password)
@@ -43,4 +50,30 @@ class AuthViewModel(private val repository: TaskerineRepository) : ViewModel() {
     }
 
     fun logout() = repository.logout()
+
+    /**
+     * Updates the current user's username and/or email.
+     * Validation and persistence both happen in the repository.
+     */
+    fun updateProfile(newUsername: String, newEmail: String) {
+        val userId = currentUser.value?.id ?: return
+        viewModelScope.launch {
+            val result = repository.updateUserProfile(userId, newUsername, newEmail)
+            result.fold(
+                onSuccess = {
+                    _profileUpdateError.value = null
+                    _profileUpdateSuccess.value = true
+                },
+                onFailure = { e ->
+                    _profileUpdateError.value = e.message ?: "Failed to update profile"
+                    _profileUpdateSuccess.value = false
+                }
+            )
+        }
+    }
+
+    fun clearProfileUpdateState() {
+        _profileUpdateError.value = null
+        _profileUpdateSuccess.value = false
+    }
 }

@@ -1,5 +1,6 @@
 package com.example.taskerine_v2.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -13,21 +14,51 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.taskerine_v2.data.local.PreferencesManager
 import com.example.taskerine_v2.data.model.User
+import com.example.taskerine_v2.viewmodel.AuthViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     currentUser: User?,
+    authViewModel: AuthViewModel,
+    preferencesManager: PreferencesManager,    // ← NEW
     onBack: () -> Unit,
     onLogout: () -> Unit,
     onDeleteAccount: () -> Unit
 ) {
+    val coroutineScope = rememberCoroutineScope()
+
     var showLogoutDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var notificationsEnabled by remember { mutableStateOf(true) }
     var emailUpdatesEnabled by remember { mutableStateOf(false) }
-    var darkModeEnabled by remember { mutableStateOf(false) }
+
+    // Dark mode is now backed by DataStore so it persists across restarts
+    // and is read by MainActivity to apply the theme app-wide.
+    val darkModeEnabled by preferencesManager.isDarkModeEnabled.collectAsState(initial = false)
+
+    // --- Edit profile dialog state ---
+    var editField by remember { mutableStateOf<EditableField?>(null) } // null = no dialog open
+    var editValue by remember { mutableStateOf("") }
+
+    val profileError by authViewModel.profileUpdateError.collectAsState()
+    val profileSuccess by authViewModel.profileUpdateSuccess.collectAsState()
+
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // React to profile update results
+    LaunchedEffect(profileSuccess, profileError) {
+        if (profileSuccess) {
+            snackbarHostState.showSnackbar("Profile updated successfully.")
+            editField = null
+            authViewModel.clearProfileUpdateState()
+        }
+        // profileError is shown inline inside the dialog itself, not as a snackbar,
+        // so the user can correct it without losing their place.
+    }
 
     if (showLogoutDialog) {
         AlertDialog(
@@ -71,7 +102,63 @@ fun SettingsScreen(
         )
     }
 
+    // --- Edit Username/Email dialog ---
+    editField?.let { field ->
+        AlertDialog(
+            onDismissRequest = {
+                editField = null
+                authViewModel.clearProfileUpdateState()
+            },
+            title = { Text("Edit ${field.label}") },
+            text = {
+                Column {
+                    OutlinedTextField(
+                        value = editValue,
+                        onValueChange = { editValue = it },
+                        label = { Text(field.label) },
+                        singleLine = true,
+                        isError = profileError != null,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    if (profileError != null) {
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            profileError ?: "",
+                            color = MaterialTheme.colorScheme.error,
+                            fontSize = 12.sp
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    when (field) {
+                        EditableField.USERNAME -> authViewModel.updateProfile(
+                            newUsername = editValue,
+                            newEmail = currentUser?.email ?: ""
+                        )
+                        EditableField.EMAIL -> authViewModel.updateProfile(
+                            newUsername = currentUser?.username ?: "",
+                            newEmail = editValue
+                        )
+                    }
+                }) {
+                    Text("Save")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    editField = null
+                    authViewModel.clearProfileUpdateState()
+                }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Settings") },
@@ -149,19 +236,28 @@ fun SettingsScreen(
                     SettingsRow(
                         icon = Icons.Default.Person,
                         title = "Username",
-                        subtitle = currentUser?.username ?: "-"
+                        subtitle = currentUser?.username ?: "-",
+                        onClick = {
+                            editValue = currentUser?.username ?: ""
+                            editField = EditableField.USERNAME
+                        }
                     )
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                     SettingsRow(
                         icon = Icons.Default.Email,
                         title = "Email",
-                        subtitle = currentUser?.email ?: "-"
+                        subtitle = currentUser?.email ?: "-",
+                        onClick = {
+                            editValue = currentUser?.email ?: ""
+                            editField = EditableField.EMAIL
+                        }
                     )
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                     SettingsRow(
                         icon = Icons.Default.Star,
                         title = "Coins",
                         subtitle = "🪙 ${currentUser?.coins ?: 0}"
+                        // No onClick — coins aren't user-editable
                     )
                 }
             }
@@ -197,7 +293,11 @@ fun SettingsScreen(
                         title = "Dark Mode",
                         subtitle = "Switch to dark theme",
                         checked = darkModeEnabled,
-                        onCheckedChange = { darkModeEnabled = it }
+                        onCheckedChange = { enabled ->
+                            coroutineScope.launch {
+                                preferencesManager.setDarkModeEnabled(enabled)
+                            }
+                        }
                     )
                 }
             }
@@ -299,6 +399,12 @@ fun SettingsScreen(
     }
 }
 
+// --- Local enum for which field is being edited ---
+private enum class EditableField(val label: String) {
+    USERNAME("Username"),
+    EMAIL("Email")
+}
+
 // --- Reusable composables ---
 
 @Composable
@@ -327,11 +433,13 @@ fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
 fun SettingsRow(
     icon: ImageVector,
     title: String,
-    subtitle: String
+    subtitle: String,
+    onClick: (() -> Unit)? = null   // ← optional now; rows without it stay non-interactive
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .let { if (onClick != null) it.clickable { onClick() } else it }
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -349,6 +457,13 @@ fun SettingsRow(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+        if (onClick != null) {
+            Icon(
+                Icons.Default.ChevronRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
     }
 }
 
@@ -363,6 +478,7 @@ fun SettingsToggleRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable { onCheckedChange(!checked) }
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -386,4 +502,3 @@ fun SettingsToggleRow(
         )
     }
 }
-

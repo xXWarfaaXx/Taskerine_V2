@@ -19,6 +19,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
+import com.example.taskerine_v2.data.local.PreferencesManager
 import com.example.taskerine_v2.data.model.Role
 import com.example.taskerine_v2.ui.screens.*
 import com.example.taskerine_v2.viewmodel.AuthViewModel
@@ -74,7 +75,8 @@ fun NavGraph(
     coinViewModel: CoinViewModel,
     reviewViewModel: ReviewViewModel,
     messageViewModel: MessageViewModel,
-    reportViewModel: ReportViewModel          // ← NEW
+    reportViewModel: ReportViewModel,
+    preferencesManager: PreferencesManager          // ← NEW
 ) {
     val currentUser by authViewModel.currentUser.collectAsState()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -229,6 +231,8 @@ fun NavGraph(
             composable(Screen.Settings.route) {
                 SettingsScreen(
                     currentUser = currentUser,
+                    authViewModel = authViewModel,
+                    preferencesManager = preferencesManager,
                     onBack = { navController.popBackStack() },
                     onLogout = {
                         authViewModel.logout()

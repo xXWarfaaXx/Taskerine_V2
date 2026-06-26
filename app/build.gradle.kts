@@ -71,4 +71,5 @@ dependencies {
     implementation("com.google.android.gms:play-services-maps:18.2.0")
     implementation("com.google.android.gms:play-services-location:21.2.0")
     implementation("androidx.compose.material:material-icons-extended:1.6.x")
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
 }
