@@ -7,12 +7,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Flag
-import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -38,8 +35,8 @@ fun HomeScreen(
     onMyTasks: () -> Unit,
     onCoinStore: () -> Unit,
     onSettings: () -> Unit,
-    onReport: () -> Unit,          // ← NEW
-    onLogout: () -> Unit
+    onReport: () -> Unit,
+    onSwitchRole: () -> Unit       // ← replaces onLogout on this screen
 ) {
     LaunchedEffect(currentUser?.id) {
         currentUser?.id?.let { coinViewModel.loadCoins(it) }
@@ -54,20 +51,13 @@ fun HomeScreen(
             TopAppBar(
                 title = { Text("Taskerine") },
                 actions = {
+                    // My Tasks, Coins, and Settings are now reachable via the
+                    // bottom nav bar, so they're no longer duplicated here.
                     IconButton(onClick = onReport) {
                         Icon(Icons.Default.Flag, contentDescription = "Report a User")
                     }
-                    IconButton(onClick = onSettings) {
-                        Icon(Icons.Default.Settings, contentDescription = "Settings")
-                    }
-                    IconButton(onClick = onCoinStore) {
-                        Icon(Icons.Default.ShoppingCart, contentDescription = "Coin Store")
-                    }
-                    IconButton(onClick = onMyTasks) {
-                        Icon(Icons.Default.List, contentDescription = "My Tasks")
-                    }
-                    IconButton(onClick = onLogout) {
-                        Icon(Icons.Default.ExitToApp, contentDescription = "Logout")
+                    IconButton(onClick = onSwitchRole) {
+                        Icon(Icons.Default.SwapHoriz, contentDescription = "Switch Role")
                     }
                 }
             )

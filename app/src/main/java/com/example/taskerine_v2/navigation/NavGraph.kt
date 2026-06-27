@@ -145,7 +145,18 @@ fun NavGraph(
             composable(Screen.Welcome.route) {
                 WelcomeScreen(
                     onRoleSelected = { role ->
-                        navController.navigate(Screen.Auth.createRoute(role))
+                        if (currentUser != null) {
+                            // Already signed in -> this is a role switch,
+                            // not a fresh login. Update role directly and
+                            // go straight to Home, no Auth screen involved.
+                            authViewModel.switchRole(role) {
+                                navController.navigate(Screen.Home.route) {
+                                    popUpTo(Screen.Welcome.route) { inclusive = true }
+                                }
+                            }
+                        } else {
+                            navController.navigate(Screen.Auth.createRoute(role))
+                        }
                     }
                 )
             }
@@ -180,9 +191,10 @@ fun NavGraph(
                     onMyTasks   = { navController.navigate(Screen.MyTasks.route) },
                     onCoinStore = { navController.navigate(Screen.CoinStore.route) },
                     onSettings  = { navController.navigate(Screen.Settings.route) },
-                    onReport    = { navController.navigate(Screen.Report.route) },  // ← NEW
-                    onLogout    = {
-                        authViewModel.logout()
+                    onReport    = { navController.navigate(Screen.Report.route) },
+                    onSwitchRole = {
+                        // Same behavior as Settings' Switch Role: stay signed
+                        // in, just go pick a different role.
                         navController.navigate(Screen.Welcome.route) {
                             popUpTo(Screen.Home.route) { inclusive = true }
                         }
@@ -251,6 +263,13 @@ fun NavGraph(
                     authViewModel = authViewModel,
                     preferencesManager = preferencesManager,
                     onBack = { navController.popBackStack() },
+                    onSwitchRole = {
+                        // Navigate to Welcome WITHOUT logging out — session,
+                        // Remember Me, and currentUser all stay intact.
+                        navController.navigate(Screen.Welcome.route) {
+                            popUpTo(Screen.Home.route) { inclusive = true }
+                        }
+                    },
                     onLogout = {
                         authViewModel.logout()
                         navController.navigate(Screen.Welcome.route) {

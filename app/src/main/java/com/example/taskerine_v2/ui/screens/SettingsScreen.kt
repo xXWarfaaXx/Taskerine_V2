@@ -24,8 +24,9 @@ import kotlinx.coroutines.launch
 fun SettingsScreen(
     currentUser: User?,
     authViewModel: AuthViewModel,
-    preferencesManager: PreferencesManager,    // ← NEW
+    preferencesManager: PreferencesManager,
     onBack: () -> Unit,
+    onSwitchRole: () -> Unit,      // ← NEW: navigates to Welcome WITHOUT logging out
     onLogout: () -> Unit,
     onDeleteAccount: () -> Unit
 ) {
@@ -330,6 +331,43 @@ fun SettingsScreen(
             item {
                 SettingsSectionHeader(title = "Account Actions")
                 SettingsCard {
+                    // Switch Role — goes back to Welcome to pick a different
+                    // role WITHOUT logging out. Session and Remember Me are
+                    // both left untouched.
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onSwitchRole() }
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.SwapHoriz,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                "Switch Role",
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                "Stay signed in and pick a different role",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Icon(
+                            Icons.Default.ChevronRight,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+
                     // Logout
                     Row(
                         modifier = Modifier

@@ -115,6 +115,16 @@ class TaskerineRepository(private val db: TaskerineDatabase) {
     suspend fun getUserById(userId: String): User? =
         userDao.getUserById(userId)?.toModel()
 
+    suspend fun updateUserRole(userId: String, newRole: Role): User? {
+        val user = userDao.getUserById(userId) ?: return null
+        val updated = user.copy(role = newRole)
+        userDao.updateUser(updated)
+        if (_currentUserFlow.value?.id == userId) {
+            _currentUserFlow.value = updated.toModel()
+        }
+        return updated.toModel()
+    }
+
     // --- Profile updates ---
     // Returns Result.success(Unit) on success, or Result.failure with a message on validation failure.
     suspend fun updateUserProfile(

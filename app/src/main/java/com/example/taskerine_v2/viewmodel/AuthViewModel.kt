@@ -93,6 +93,19 @@ class AuthViewModel(
     }
 
     /**
+     * Changes the current user's role without logging them out.
+     * Used by "Switch Role" — session, Remember Me, and currentUser
+     * identity are all preserved; only the role field changes.
+     */
+    fun switchRole(newRole: Role, onResult: () -> Unit) {
+        val userId = currentUser.value?.id ?: return
+        viewModelScope.launch {
+            repository.updateUserRole(userId, newRole)
+            onResult()
+        }
+    }
+
+    /**
      * Updates the current user's username and/or email.
      * Validation and persistence both happen in the repository.
      */
