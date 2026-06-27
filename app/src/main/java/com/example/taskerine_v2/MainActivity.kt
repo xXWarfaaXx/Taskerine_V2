@@ -30,7 +30,7 @@ class MainActivity : ComponentActivity() {
     private val preferencesManager by lazy { PreferencesManager(applicationContext) }  // ← NEW
 
     private val authViewModel: AuthViewModel by viewModels {
-        AuthViewModelFactory(repository)
+        AuthViewModelFactory(repository, preferencesManager)
     }
     private val taskViewModel: TaskViewModel by viewModels {
         TaskViewModelFactory(repository)

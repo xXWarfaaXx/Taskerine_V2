@@ -1,5 +1,6 @@
 package com.example.taskerine_v2.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
@@ -12,6 +13,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.taskerine_v2.data.model.Role
+import com.example.taskerine_v2.ui.theme.TaskerineTextFieldColors
 import com.example.taskerine_v2.viewmodel.AuthViewModel
 
 @Composable
@@ -25,6 +27,7 @@ fun AuthScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var username by remember { mutableStateOf("") }
+    var rememberMe by remember { mutableStateOf(false) }   // ← NEW
     var isLoading by remember { mutableStateOf(false) }
 
     val error by authViewModel.error.collectAsState()
@@ -50,30 +53,39 @@ fun AuthScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
+        // Username is now always shown — used for both login and register.
+        OutlinedTextField(
+            value = username,
+            onValueChange = { username = it },
+            label = { Text("Username") },
+            singleLine = true,
+            colors = TaskerineTextFieldColors(),
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Email is only needed at registration time (to create the account).
+        // Login no longer uses email at all.
         if (!isLogin) {
             OutlinedTextField(
-                value = username,
-                onValueChange = { username = it },
-                label = { Text("Username") },
+                value = email,
+                onValueChange = { email = it },
+                label = { Text("Email") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                singleLine = true,
+                colors = TaskerineTextFieldColors(),
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(12.dp))
         }
 
         OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
-            label = { Text("Email") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-            modifier = Modifier.fillMaxWidth()
-        )
-        Spacer(modifier = Modifier.height(12.dp))
-
-        OutlinedTextField(
             value = password,
             onValueChange = { password = it },
             label = { Text("Password") },
             visualTransformation = PasswordVisualTransformation(),
+            singleLine = true,
+            colors = TaskerineTextFieldColors(),
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -95,6 +107,23 @@ fun AuthScreen(
             }
         }
 
+        // Remember Me — only shown on the login form, not registration.
+        if (isLogin) {
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { rememberMe = !rememberMe },
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Checkbox(
+                    checked = rememberMe,
+                    onCheckedChange = { rememberMe = it }
+                )
+                Text("Remember me", fontSize = 14.sp)
+            }
+        }
+
         error?.let {
             Spacer(modifier = Modifier.height(8.dp))
             Text(it, color = MaterialTheme.colorScheme.error, fontSize = 13.sp)
@@ -106,7 +135,7 @@ fun AuthScreen(
             onClick = {
                 isLoading = true
                 if (isLogin) {
-                    authViewModel.login(email, password) { success ->
+                    authViewModel.loginByUsername(username, rememberMe) { success ->
                         isLoading = false
                         if (success) onAuthSuccess()
                     }

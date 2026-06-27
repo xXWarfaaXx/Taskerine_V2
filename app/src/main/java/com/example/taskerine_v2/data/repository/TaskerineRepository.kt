@@ -70,6 +70,19 @@ class TaskerineRepository(private val db: TaskerineDatabase) {
         return user
     }
 
+    // Login by username instead of email.
+    suspend fun loginByUsername(username: String): User? {
+        val user = userDao.getUserByUsername(username)?.toModel()
+        _currentUserFlow.value = user
+        return user
+    }
+
+    suspend fun restoreSession(userId: String): User? {
+        val user = userDao.getUserById(userId)?.toModel()
+        _currentUserFlow.value = user
+        return user
+    }
+
     suspend fun register(username: String, email: String, role: Role): User {
         val user = User(
             id = "u${System.currentTimeMillis()}",

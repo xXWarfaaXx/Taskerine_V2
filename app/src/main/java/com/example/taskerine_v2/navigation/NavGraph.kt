@@ -1,5 +1,7 @@
 package com.example.taskerine_v2.navigation
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
@@ -10,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -79,10 +82,24 @@ fun NavGraph(
     preferencesManager: PreferencesManager          // ← NEW
 ) {
     val currentUser by authViewModel.currentUser.collectAsState()
+    val isCheckingSession by authViewModel.isCheckingSession.collectAsState()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
     val showBottomNav = currentRoute in bottomNavRoutes
+
+    // While we're checking DataStore for a remembered session, show a simple
+    // loading state instead of NavHost. This avoids a flash of the Welcome
+    // screen before redirecting to Home when a session is remembered.
+    if (isCheckingSession) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(color = AmberPrimary)
+        }
+        return
+    }
 
     Scaffold(
         containerColor = NavBackground,
