@@ -13,6 +13,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -25,6 +26,9 @@ import com.example.taskerine_v2.viewmodel.TaskViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+
+// A system message is one sent by "system" — displayed differently in chat
+private val SYSTEM_SENDER_ID = "system"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,8 +47,13 @@ fun TaskDetailScreen(
 
     val task by taskViewModel.selectedTask.collectAsState()
     val messages by messageViewModel.messages.collectAsState()
+    val completionError by taskViewModel.completionError.collectAsState()
+    val completionSuccess by taskViewModel.completionSuccess.collectAsState()
+
     var messageText by remember { mutableStateOf("") }
+    var completionRequested by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     // Scroll to bottom when new message arrives
     LaunchedEffect(messages.size) {
@@ -53,11 +62,29 @@ fun TaskDetailScreen(
         }
     }
 
-    // Only tasker and requester of this task can chat
+    // Check if a completion request message already exists in chat
+    // so we don't let the Tasker spam "Mark as Complete"
+    val completionAlreadyRequested = remember(messages) {
+        messages.any { it.senderId == SYSTEM_SENDER_ID && it.content.contains("marked this task as complete") }
+    }
+
+    // React to payment/completion result
+    LaunchedEffect(completionSuccess, completionError) {
+        if (completionSuccess) {
+            snackbarHostState.showSnackbar("✅ Payment released! Task marked as complete.")
+            taskViewModel.clearCompletionState()
+        }
+        if (completionError != null) {
+            snackbarHostState.showSnackbar(completionError ?: "")
+            taskViewModel.clearCompletionState()
+        }
+    }
+
     val canChat = currentUser?.id == task?.requesterId ||
             currentUser?.id == task?.acceptedById
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Task Details") },
@@ -75,7 +102,6 @@ fun TaskDetailScreen(
                     .padding(padding)
                     .fillMaxSize()
             ) {
-                // Scrollable content + chat
                 LazyColumn(
                     state = listState,
                     modifier = Modifier.weight(1f),
@@ -112,56 +138,102 @@ fun TaskDetailScreen(
 
                     // Action buttons
                     item {
-                        val canAccept = currentUser?.role == Role.TASKER
-                                && t.status == TaskStatus.OPEN
-                                && t.requesterId != currentUser.id
-                                && t.acceptedById != currentUser.id
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            // Accept task (Tasker only, open tasks)
+                            val canAccept = currentUser?.role == Role.TASKER
+                                    && t.status == TaskStatus.OPEN
+                                    && t.requesterId != currentUser.id
+                                    && t.acceptedById != currentUser.id
 
-                        if (canAccept) {
-                            Button(
-                                onClick = {
-                                    currentUser.let { user ->
-                                        taskViewModel.acceptTask(t.id, user.id)
-                                        onBack()
-                                    }
-                                },
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text("Accept Task")
-                            }
-                        } else if (t.acceptedById == currentUser?.id && t.status == TaskStatus.ACCEPTED) {
-                            OutlinedButton(
-                                onClick = {},
-                                enabled = false,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text("You accepted this task")
-                            }
-                        }
-
-                        val canComplete = currentUser?.id == t.requesterId
+                            if (canAccept) {
+                                Button(
+                                    onClick = {
+                                        currentUser.let { user ->
+                                            taskViewModel.acceptTask(t.id, user.id)
+                                            onBack()
+                                        }
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text("Accept Task")
+                                }
+                            } else if (t.acceptedById == currentUser?.id
                                 && t.status == TaskStatus.ACCEPTED
-
-                        if (canComplete) {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            OutlinedButton(
-                                onClick = {
-                                    taskViewModel.completeTask(t.id)
-                                    onBack()
-                                },
-                                modifier = Modifier.fillMaxWidth()
                             ) {
-                                Text("Mark as Completed")
+                                OutlinedButton(
+                                    onClick = {},
+                                    enabled = false,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text("You accepted this task")
+                                }
                             }
-                        }
 
-                        if (t.status == TaskStatus.COMPLETED) {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Button(
-                                onClick = { onReviews(t.id) },
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text("⭐ Leave / View Reviews")
+                            // ── Mark as Complete (Tasker who accepted) ───────
+                            val isAcceptedTasker = currentUser?.id == t.acceptedById
+                                    && t.status == TaskStatus.ACCEPTED
+
+                            if (isAcceptedTasker && !completionAlreadyRequested) {
+                                Button(
+                                    onClick = {
+                                        taskViewModel.requestCompletion(
+                                            taskId = t.id,
+                                            taskerName = currentUser?.username ?: "Tasker"
+                                        ) {}
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.primary
+                                    )
+                                ) {
+                                    Text("✅ Mark as Complete")
+                                }
+                            }
+
+                            if (isAcceptedTasker && completionAlreadyRequested) {
+                                OutlinedButton(
+                                    onClick = {},
+                                    enabled = false,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text("Completion request sent — awaiting Requester confirmation")
+                                }
+                            }
+
+                            // ── Confirm & Release Payment (Requester) ────────
+                            val isRequesterPendingConfirm = currentUser?.id == t.requesterId
+                                    && t.status == TaskStatus.ACCEPTED
+                                    && completionAlreadyRequested
+
+                            if (isRequesterPendingConfirm) {
+                                Button(
+                                    onClick = {
+                                        taskViewModel.completeTaskWithPayment(
+                                            taskId = t.id,
+                                            taskerId = t.acceptedById ?: "",
+                                            rewardAmount = t.reward.toInt()
+                                        )
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = Color(0xFF4CAF50)
+                                    )
+                                ) {
+                                    Text("💰 Confirm & Release Payment (${t.reward.toInt()} coins)")
+                                }
+                            }
+
+                            // Reviews (completed tasks)
+                            if (t.status == TaskStatus.COMPLETED) {
+                                Button(
+                                    onClick = { onReviews(t.id) },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text("⭐ Leave / View Reviews")
+                                }
                             }
                         }
                     }
@@ -200,10 +272,14 @@ fun TaskDetailScreen(
                         }
                     } else {
                         items(messages) { message ->
-                            MessageBubble(
-                                message = message,
-                                isCurrentUser = message.senderId == currentUser?.id
-                            )
+                            if (message.senderId == SYSTEM_SENDER_ID) {
+                                SystemMessageBubble(message = message)
+                            } else {
+                                MessageBubble(
+                                    message = message,
+                                    isCurrentUser = message.senderId == currentUser?.id
+                                )
+                            }
                         }
                     }
 
@@ -211,7 +287,7 @@ fun TaskDetailScreen(
                 }
 
                 // Message input bar
-                if (canChat) {
+                if (canChat && t.status != TaskStatus.COMPLETED) {
                     HorizontalDivider()
                     Row(
                         modifier = Modifier
@@ -257,6 +333,33 @@ fun TaskDetailScreen(
     }
 }
 
+// System messages rendered differently — centred, amber-tinted, no bubble tail
+@Composable
+fun SystemMessageBubble(message: Message) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Card(
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer
+            ),
+            modifier = Modifier.widthIn(max = 300.dp)
+        ) {
+            Text(
+                text = message.content,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
+            )
+        }
+    }
+}
+
 @Composable
 fun DetailRow(label: String, value: String) {
     Row(
@@ -272,10 +375,7 @@ fun DetailRow(label: String, value: String) {
             fontSize = 14.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        Text(
-            text = value,
-            fontSize = 14.sp
-        )
+        Text(text = value, fontSize = 14.sp)
     }
 }
 

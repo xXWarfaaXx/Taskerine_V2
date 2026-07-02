@@ -100,6 +100,26 @@ class TaskerineRepository(private val db: TaskerineDatabase) {
         _currentUserFlow.value = null
     }
 
+    suspend fun deductCoins(userId: String, amount: Int): Boolean {
+        val user = userDao.getUserById(userId) ?: return false
+        if (user.coins < amount) return false
+        val updated = user.copy(coins = user.coins - amount)
+        userDao.updateUser(updated)
+        if (_currentUserFlow.value?.id == userId) {
+            _currentUserFlow.value = updated.toModel()
+        }
+        return true
+    }
+
+    // Transfers coins from requester to tasker atomically.
+    // Returns false if the requester has insufficient coins.
+    suspend fun transferCoins(fromUserId: String, toUserId: String, amount: Int): Boolean {
+        val deducted = deductCoins(fromUserId, amount)
+        if (!deducted) return false
+        addCoins(toUserId, amount)
+        return true
+    }
+
     suspend fun addCoins(userId: String, amount: Int) {
         val user = userDao.getUserById(userId) ?: return
         val updated = user.copy(coins = user.coins + amount)

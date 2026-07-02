@@ -2,6 +2,7 @@ package com.example.taskerine_v2.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.taskerine_v2.data.model.Message
 import com.example.taskerine_v2.data.model.Task
 import com.example.taskerine_v2.data.repository.TaskerineRepository
 import kotlinx.coroutines.flow.*
@@ -39,6 +40,13 @@ class TaskViewModel(private val repository: TaskerineRepository) : ViewModel() {
     private val _selectedTask = MutableStateFlow<Task?>(null)
     val selectedTask: StateFlow<Task?> = _selectedTask
 
+    // --- Completion flow state ---
+    private val _completionError = MutableStateFlow<String?>(null)
+    val completionError: StateFlow<String?> = _completionError
+
+    private val _completionSuccess = MutableStateFlow(false)
+    val completionSuccess: StateFlow<Boolean> = _completionSuccess
+
     fun loadMyTasks(userId: String) {
         viewModelScope.launch {
             repository.getTasksForUser(userId).collect {
@@ -58,11 +66,68 @@ class TaskViewModel(private val repository: TaskerineRepository) : ViewModel() {
     }
 
     fun acceptTask(taskId: String, taskerId: String) {
-        viewModelScope.launch { repository.acceptTask(taskId, taskerId) }
+        viewModelScope.launch {
+            // Reserve coins from requester when task is accepted
+            val task = repository.getTaskById(taskId) ?: return@launch
+            val rewardCoins = task.reward.toInt()
+            repository.deductCoins(task.requesterId, rewardCoins)
+            repository.acceptTask(taskId, taskerId)
+            _selectedTask.value = repository.getTaskById(taskId)
+        }
     }
 
     fun completeTask(taskId: String) {
         viewModelScope.launch { repository.completeTask(taskId) }
+    }
+
+    /**
+     * Tasker calls this when they believe the task is done.
+     * Sends a system message in Task Chat notifying the Requester to confirm.
+     */
+    fun requestCompletion(
+        taskId: String,
+        taskerName: String,
+        onMessageSent: () -> Unit
+    ) {
+        viewModelScope.launch {
+            repository.sendMessage(
+                Message(
+                    id = "sys_${System.currentTimeMillis()}",
+                    taskId = taskId,
+                    senderId = "system",
+                    senderName = "System",
+                    content = "✅ $taskerName has marked this task as complete. " +
+                            "Please confirm below to release payment.",
+                    timestamp = System.currentTimeMillis()
+                )
+            )
+            onMessageSent()
+        }
+    }
+
+    /**
+     * Requester calls this to confirm completion.
+     * Coins were already deducted at acceptance, so this just
+     * transfers them to the Tasker and marks the task Completed.
+     */
+    fun completeTaskWithPayment(
+        taskId: String,
+        taskerId: String,
+        rewardAmount: Int
+    ) {
+        viewModelScope.launch {
+            // Coins were held at acceptance — now release them to the Tasker.
+            repository.addCoins(taskerId, rewardAmount)
+            repository.completeTask(taskId)
+            _selectedTask.value = repository.getTaskById(taskId)
+            _completionError.value = null
+            _completionSuccess.value = true
+        }
+    }
+
+    fun clearCompletionState() {
+        _completionError.value = null
+        _completionSuccess.value = false
     }
 
     fun onSearchQueryChange(query: String) {
