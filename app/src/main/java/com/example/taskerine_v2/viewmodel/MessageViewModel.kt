@@ -35,6 +35,15 @@ class MessageViewModel(private val repository: TaskerineRepository) : ViewModel(
             )
         }
     }
+
+    /**
+     * Returns a live Flow of messages for a specific task.
+     * Used by the inbox screen to show last message previews
+     * for each conversation row without loading everything into
+     * a single shared StateFlow.
+     */
+    fun getMessagesForTask(taskId: String): Flow<List<Message>> =
+        repository.getMessagesForTask(taskId)
 }
 
 class MessageViewModelFactory(private val repository: TaskerineRepository) : ViewModelProvider.Factory {

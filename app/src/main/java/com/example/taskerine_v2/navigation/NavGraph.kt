@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.MailOutline
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
@@ -51,7 +52,8 @@ sealed class Screen(val route: String) {
         fun createRoute(taskId: String) = "reviews/$taskId"
     }
     object Settings   : Screen("settings")
-    object Report     : Screen("report")          // ← NEW
+    object Report     : Screen("report")
+    object Messages   : Screen("messages")    // ← NEW
 }
 
 data class BottomNavItem(val label: String, val icon: ImageVector, val route: String)
@@ -59,6 +61,7 @@ data class BottomNavItem(val label: String, val icon: ImageVector, val route: St
 private val bottomNavItems = listOf(
     BottomNavItem("Home",     Icons.Filled.Home,         Screen.Home.route),
     BottomNavItem("My Tasks", Icons.Filled.List,         Screen.MyTasks.route),
+    BottomNavItem("Messages", Icons.Filled.MailOutline,  Screen.Messages.route),
     BottomNavItem("Coins",    Icons.Filled.ShoppingCart, Screen.CoinStore.route),
     BottomNavItem("Settings", Icons.Filled.Settings,     Screen.Settings.route),
 )
@@ -66,6 +69,7 @@ private val bottomNavItems = listOf(
 private val bottomNavRoutes = setOf(
     Screen.Home.route,
     Screen.MyTasks.route,
+    Screen.Messages.route,
     Screen.CoinStore.route,
     Screen.Settings.route,
 )
@@ -281,6 +285,18 @@ fun NavGraph(
                         navController.navigate(Screen.Welcome.route) {
                             popUpTo(Screen.Home.route) { inclusive = true }
                         }
+                    }
+                )
+            }
+
+            // ── Messages inbox ───────────────────────────────────────────
+            composable(Screen.Messages.route) {
+                MessagesInboxScreen(
+                    currentUser = currentUser,
+                    taskViewModel = taskViewModel,
+                    messageViewModel = messageViewModel,
+                    onTaskClick = { taskId ->
+                        navController.navigate(Screen.TaskDetail.createRoute(taskId))
                     }
                 )
             }
